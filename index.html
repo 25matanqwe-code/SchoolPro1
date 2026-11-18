@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>מערכת הלימודים שלי</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f3f5fb;color:#20243a;font-family:Arial}
+header{background:linear-gradient(135deg,#5546d8,#8275f5);color:white;padding:25px 20px;border-radius:0 0 28px 28px}
+header h1{margin:0 0 8px;font-size:26px}
+main{padding:16px;max-width:700px;margin:auto}
+nav{display:flex;gap:7px;overflow-x:auto;margin:18px 0}
+button{cursor:pointer;font-family:Arial}
+nav button,.dayBtn{border:0;border-radius:12px;padding:12px;background:white;color:#555;font-weight:bold;white-space:nowrap}
+nav button.active,.dayBtn.active{background:#5546d8;color:white}
+section{display:none}
+section.active{display:block}
+.card{background:white;padding:17px;border-radius:18px;margin-bottom:15px;box-shadow:0 3px 15px #25265a0b}
+h2{margin:0 0 15px;font-size:21px}
+input{width:100%;padding:13px;border:1px solid #ddd;border-radius:11px;font-size:16px;margin-bottom:10px}
+.action{width:100%;border:0;background:#5546d8;color:white;padding:14px;border-radius:12px;font-size:16px;font-weight:bold}
+.days{display:flex;gap:7px;overflow-x:auto;margin-bottom:16px}
+.dayBtn{flex:1;min-width:55px}
+.subject{background:#f0efff;padding:13px;border-radius:12px;margin:8px 0;display:flex;justify-content:space-between}
+.item{display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid #eee;padding:13px 0}
+.item small{display:block;color:#777;margin-top:5px}
+.delete{border:0;background:#fff0f0;color:#d44;padding:10px;border-radius:9px}
+.empty{text-align:center;color:#888;padding:18px}
+.countdown{background:#28234f;color:white;border-radius:19px;padding:20px;margin-top:17px}
+.countdown h2{font-size:19px}
+.timer{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center}
+.timebox{background:#ffffff20;border-radius:12px;padding:12px 3px}
+.timebox strong{display:block;font-size:25px}
+.timebox small{font-size:12px;color:#ddd}
+.holiday{background:#f0efff;padding:13px;border-radius:12px;margin:9px 0}
+.holiday small{display:block;color:#777;margin-top:5px}
+.exam-item{border-radius:14px;padding:15px 10px;margin:9px 0;background:#f7f7fc;border-bottom:0}
+.exam-name{font-weight:bold}
+.exam-rank-1{background:#eeeaff;padding:21px 13px}
+.exam-rank-1 .exam-name{font-size:23px}
+.exam-rank-2 .exam-name{font-size:21px}
+.exam-rank-3 .exam-name{font-size:19px}
+.exam-rank-4 .exam-name{font-size:18px}
+.exam-rank-5 .exam-name{font-size:17px}
+</style>
+</head>
+<body>
+<header>
+<h1>📚 מערכת הלימודים שלי</h1>
+<p id="welcome">כל הלימודים שלך במקום אחד</p>
+<div class="countdown">
+<h2 id="holidayName">🎉 סופרים לחופש הקרוב!</h2>
+<div class="timer">
+<div class="timebox"><strong id="daysLeft">--</strong><small>ימים</small></div>
+<div class="timebox"><strong id="hoursLeft">--</strong><small>שעות</small></div>
+<div class="timebox"><strong id="minutesLeft">--</strong><small>דקות</small></div>
+<div class="timebox"><strong id="secondsLeft">--</strong><small>שניות</small></div>
+</div>
+<p id="holidayDate"></p>
+</div>
+</header>
+<main>
+<nav>
+<button class="active" onclick="show('schedule',this)">📚 מערכת שעות</button>
+<button onclick="show('tests',this)">📝 מבחנים</button>
+<button onclick="show('tasks',this)">✅ משימות</button>
+<button onclick="show('holidays',this)">🎉 חופשות</button>
+</nav>
+<section id="schedule" class="active">
+<div class="card">
+<h2>📚 מערכת השעות שלי</h2>
+<p id="todayText"></p>
+<div class="days" id="days"></div>
+<div id="scheduleList"></div>
+</div>
+</section>
+<section id="tests">
+<div class="card">
+<h2>➕ הוספת מבחן</h2>
+<input id="testName" placeholder="שם המבחן או המקצוע">
+<input id="testDate" type="date">
+<button class="action" onclick="addTest()">הוסף מבחן</button>
+</div>
+<div class="card">
+<h2>📝 כל המבחנים הקרובים</h2>
+<div id="testList"></div>
+</div>
+</section>
+<section id="tasks">
+<div class="card">
+<h2>➕ הוספת משימה</h2>
+<input id="taskName" placeholder="מה צריך לעשות?">
+<input id="taskDate" type="date">
+<button class="action" onclick="addTask()">הוסף משימה</button>
+</div>
+<div class="card">
+<h2>המשימות שלי</h2>
+<div id="taskList"></div>
+</div>
+</section>
+<section id="holidays">
+<div class="card">
+<h2>🎉 לוח החופשות שלי</h2>
+<div id="holidayList"></div>
+</div>
+</section>
+</main>
+<script>
+const dayNames=["ראשון","שני","שלישי","רביעי","חמישי"];
+const schedule={
+"ראשון":["שביל מורשת","מתמטיקה","חינוך","לשון","אנגלית","מתמטיקה","מעו״ף"],
+"שני":["מדעים","ערבית","אנגלית","אנגלית","שביל מורשת","היסטוריה"],
+"שלישי":["מתמטיקה","מתמטיקה","סייבר","סייבר","תנ״ך","חנ״ג","מדעים","מצוינות מתמטיקה"],
+"רביעי":["לשון","ערבית","מתמטיקה","היסטוריה","תנ״ך","מדעים","אנגלית"],
+"חמישי":["אנגלית","חנ״ג","חינוך","לשון","מתמטיקה","היסטוריה","ערבית"]
+};
+function getToday(){
+const d=new Date().getDay();
+return d>=0&&d<=4?dayNames[d]:"ראשון";
+}
+let selectedDay=getToday();
+const originalTests=[
+["מדעים","2026-11-18"],
+["תנ״ך","2026-11-19"],
+["ערבית דף 9","2026-11-22"],
+["ערבית ז-8","2026-11-23"],
+["מועד ב","2026-11-24"],
+["פיזיקה דף 9","2026-11-25"],
+["מועד ב","2026-11-26"],
+["מתמטיקה דף 9","2026-11-29"],
+["תנ״ך דף 9","2026-12-02"],
+["בוחן בערבית במהלך השבוע","2026-12-13"],
+["לשון דף 9","2026-12-15"],
+["היסטוריה ז-8","2026-12-20"],
+["מתמטיקה דף 9","2026-12-21"],
+["מתמטיקה דף 8","2026-12-22"],
+["תרבות","2026-12-23"],
+["ביולוגיה דף 9","2026-12-24"],
+["אנגלית דף 9","2026-12-24"],
+["היסטוריה דף 9","2026-12-27"],
+["אנגלית ז-8","2026-12-28"],
+["פיזיקה דף 9","2026-12-29"],
+["מדעים ז-8","2026-12-30"],
+["ביולוגיה דף 9","2026-12-31"],
+["בוחן לשון במהלך השבוע","2027-01-03"],
+["מחשבים/שחמט דף 9","2027-01-03"],
+["מחשבים 8","2027-01-04"],
+["מועד ב","2027-01-05"],
+["מועד ב","2027-01-07"]
+];
+function isForGrade4(name){
+const text=String(name);
+const range=text.match(/ז\s*(\d+)\s*(?:[-–]|עד)\s*ז?\s*(\d+)/);
+if(range){
+const from=Number(range[1]);
+const to=Number(range[2]);
+return from<=4 && to>=4;
+}
+const grades=[...text.matchAll(/ז\s*(\d+)/g)].map(match=>Number(match[1]));
+if(grades.length)return grades.includes(4);
+return true;
+}
+let tests;
+if(localStorage.getItem("schoolDataVersion")!=="3"){
+tests=originalTests.map((t,i)=>({id:1000+i,name:t[0],date:t[1]}));
+localStorage.setItem("schoolTests",JSON.stringify(tests));
+localStorage.setItem("schoolDataVersion","3");
+}else{
+tests=JSON.parse(localStorage.getItem("schoolTests")||"[]");
+}
+let tasks=JSON.parse(localStorage.getItem("schoolTasks")||"[]");
+const holidays=[
+{name:"חנוכה 🕎",start:"2026-12-06",end:"2026-12-12",back:"13 בדצמבר"},
+{name:"פורים 🎭",start:"2027-03-23",end:"2027-03-24",back:"25 במרץ"},
+{name:"פסח 🍷",start:"2027-04-13",end:"2027-04-28",back:"29 באפריל"},
+{name:"יום העצמאות 🇮🇱",start:"2027-05-12",end:"2027-05-12",back:"לפי לוח בית הספר"},
+{name:"שבועות 🌾",start:"2027-06-10",end:"2027-06-11",back:"13 ביוני"},
+{name:"החופש הגדול ☀️",start:"2027-06-21",end:"2027-08-31",back:"1 בספטמבר"}
+];
+function save(){
+localStorage.setItem("schoolTests",JSON.stringify(tests));
+localStorage.setItem("schoolTasks",JSON.stringify(tasks));
+}
+function removePastTests(){
+const today=new Date();
+today.setHours(0,0,0,0);
+tests=tests.filter(t=>new Date(t.date+"T00:00:00")>=today);
+}
+function show(id,button){
+document.querySelectorAll("section").forEach(s=>s.classList.remove("active"));
+document.getElementById(id).classList.add("active");
+document.querySelectorAll("nav button").forEach(b=>b.classList.remove("active"));
+button.classList.add("active");
+}
+function renderSchedule(){
+document.getElementById("todayText").textContent="המערכת של יום "+selectedDay;
+document.getElementById("days").innerHTML=dayNames.map(d=>
+`<button class="dayBtn ${d===selectedDay?'active':''}" onclick="selectDay('${d}')">${d}</button>`
+).join("");
+const end=selectedDay==="שני"?"13:30":"14:15";
+document.getElementById("scheduleList").innerHTML=
+`<h3>יום ${selectedDay} · סיום ${end}</h3>`+
+schedule[selectedDay].map((s,i)=>`
+<div class="subject"><span>${i+1}. ${s}</span><small>שיעור ${i+1}</small></div>
+`).join("");
+}
+function selectDay(d){selectedDay=d;renderSchedule();}
+function dateText(d){return new Date(d+"T12:00:00").toLocaleDateString("he-IL");}
+function escapeHTML(v){
+return String(v).replace(/[&<>"']/g,c=>({
+"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+}[c]));
+}
+function addTest(){
+const name=document.getElementById("testName").value.trim();
+const date=document.getElementById("testDate").value;
+if(!name||!date){alert("צריך למלא שם ותאריך");return;}
+tests.push({id:Date.now(),name,date});
+save();renderTests();
+document.getElementById("testName").value="";
+document.getElementById("testDate").value="";
+}
+function deleteTest(id){tests=tests.filter(t=>t.id!==id);save();renderTests();}
+function addTask(){
+const name=document.getElementById("taskName").value.trim();
+const date=document.getElementById("taskDate").value;
+if(!name){alert("צריך לכתוב משימה");return;}
+tasks.push({id:Date.now(),name,date,done:false});
+save();renderTasks();
+document.getElementById("taskName").value="";
+document.getElementById("taskDate").value="";
+}
+function deleteTask(id){tasks=tasks.filter(t=>t.id!==id);save();renderTasks();}
+function toggleTask(id){tasks=tasks.map(t=>t.id===id?{...t,done:!t.done}:t);save();renderTasks();}
+function renderTests(){
+removePastTests();
+const visibleTests=tests.filter(t=>isForGrade4(t.name)).sort((a,b)=>a.date.localeCompare(b.date));
+document.getElementById("testList").innerHTML=
+visibleTests.length?visibleTests.map((t,i)=>{
+const today=new Date();today.setHours(0,0,0,0);
+const examDate=new Date(t.date+"T00:00:00");
+const diff=Math.round((examDate-today)/86400000);
+const countdown=diff===0?"🔥 היום!":diff===1?"מחר!":"עוד "+diff+" ימים";
+const rank=Math.min(i+1,5);
+return `
+<div class="item exam-item exam-rank-${rank}">
+<div>
+<div class="exam-name">${escapeHTML(t.name)}</div>
+<small>📅 ${dateText(t.date)}</small>
+<div style="color:#5546d8;font-weight:bold;margin-top:8px">${countdown}</div>
+</div>
+<button class="delete" onclick="deleteTest(${t.id})">מחק</button>
+</div>`;
+}).join(""):'<div class="empty">אין מבחנים קרובים 🎉</div>';
+save();
+}
+function renderTasks(){
+document.getElementById("taskList").innerHTML=
+tasks.length?tasks.map(t=>`
+<div class="item">
+<div>
+<label>
+<input type="checkbox" style="width:auto" ${t.done?'checked':''} onchange="toggleTask(${t.id})">
+${escapeHTML(t.name)}
+</label>
+<small>${t.date?dateText(t.date):"ללא תאריך"}</small>
+</div>
+<button class="delete" onclick="deleteTask(${t.id})">מחק</button>
+</div>
+`).join(""):'<div class="empty">אין משימות עדיין</div>';
+}
+function renderHolidays(){
+document.getElementById("holidayList").innerHTML=holidays.map(h=>`
+<div class="holiday">
+<b>${h.name}</b>
+<small>${dateText(h.start)} – ${dateText(h.end)}</small>
+<small>חוזרים ללימודים: ${h.back}</small>
+</div>`).join("");
+}
+function updateCountdown(){
+const now=new Date();
+const next=holidays.find(h=>new Date(h.end+"T23:59:59")>=now);
+if(!next){document.getElementById("holidayName").textContent="החופשות הסתיימו";return;}
+const start=new Date(next.start+"T00:00:00");
+let diff=start-now;
+let title="🎉 סופרים לחופשת "+next.name;
+if(diff<=0){
+title="🎉 עכשיו חופשת "+next.name;
+diff=new Date(next.end+"T23:59:59")-now;
+if(diff<=0)return;
+document.getElementById("holidayDate").textContent="החופשה מסתיימת ב-"+dateText(next.end);
+}else{
+document.getElementById("holidayDate").textContent="מתחילה ב-"+dateText(next.start);
+}
+document.getElementById("holidayName").textContent=title;
+document.getElementById("daysLeft").textContent=Math.floor(diff/86400000);
+document.getElementById("hoursLeft").textContent=Math.floor(diff%86400000/3600000);
+document.getElementById("minutesLeft").textContent=Math.floor(diff%3600000/60000);
+document.getElementById("secondsLeft").textContent=Math.floor(diff%60000/1000);
+}
+function render(){
+renderSchedule();renderTests();renderTasks();renderHolidays();
+document.getElementById("welcome").textContent="יום "+selectedDay+" – בהצלחה!";
+}
+render();updateCountdown();setInterval(updateCountdown,1000);
+</script>
+</body>
+</html>
